@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
-export default function RiskForm({ onPredict }) {
+export default function RiskForm({ onPredict, loading }) {
   const [disease, setDisease] = useState('diabetes');
   const [inputs, setInputs] = useState({
-    age: '9',
+    age: '1',
     bmi: '',
     physActivity: true,
     genHlth: '3',
@@ -11,6 +11,7 @@ export default function RiskForm({ onPredict }) {
     highChol: false,
     smoker: false
   });
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -18,11 +19,27 @@ export default function RiskForm({ onPredict }) {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+    // Clear error on change
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    const bmi = parseFloat(inputs.bmi);
+    if (!inputs.bmi || isNaN(bmi) || bmi < 10 || bmi > 50) {
+      newErrors.bmi = 'Please enter a valid BMI between 10 and 50';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onPredict({ disease, ...inputs });
+    if (validate()) {
+      onPredict({ disease, ...inputs });
+    }
   };
 
   const getAgeLabel = (group) => {
@@ -91,9 +108,9 @@ export default function RiskForm({ onPredict }) {
             max="50"
             value={inputs.bmi}
             onChange={handleChange}
-            required
             className="w-full bg-dark-700 border border-dark-600 rounded p-2.5"
           />
+          {errors.bmi && <p className="text-red-400 text-sm mt-1">{errors.bmi}</p>}
         </div>
 
         <div className="space-y-2">
@@ -157,9 +174,10 @@ export default function RiskForm({ onPredict }) {
 
         <button
           type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700 py-2.5 rounded font-medium transition"
+          disabled={loading}
+          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 py-2.5 rounded font-medium transition"
         >
-          Check Risk
+          {loading ? 'Checking...' : 'Check Risk'}
         </button>
       </form>
     </div>

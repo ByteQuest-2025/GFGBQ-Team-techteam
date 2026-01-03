@@ -65,15 +65,6 @@ export default function AuthForm({ mode, onAuthSuccess }) {
           {mode === 'login' ? 'Sign In' : 'Sign Up'}
         </button>
       </form>
-      
-      <div className="mt-6 text-center text-gray-400">
-        <button
-          onClick={() => onAuthSuccess('demo')}
-          className="text-sm hover:underline"
-        >
-          Try demo account: demo / hackathon
-        </button>
-      </div>
     </div>
   );
 }

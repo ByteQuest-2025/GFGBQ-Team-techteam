@@ -1,9 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Heart, TrendingUp, History, LogOut } from 'lucide-react';
 import RiskForm from '../components/RiskForm';
 
 export default function Dashboard({ username, onLogout }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/history', {
+          method: 'GET',
+          credentials: 'include'
+        });
+        const data = await res.json();
+        if (data.history) {
+          setHistory(data.history);
+        }
+      } catch (err) {
+        console.error('Failed to fetch history', err);
+      }
+    };
+    fetchHistory();
+  }, []);
 
   const handlePredict = async (data) => {
     setLoading(true);
@@ -19,6 +40,14 @@ export default function Dashboard({ username, onLogout }) {
       
       const prediction = await res.json();
       setResult(prediction);
+      // Add to history
+      setHistory(prev => [{
+        id: Date.now(), // temp id
+        disease: prediction.disease,
+        risk_level: prediction.riskLevel,
+        risk_score: prediction.riskScore,
+        timestamp: Date.now()
+      }, ...prev]);
     } catch (err) {
       console.error(err);
       alert('Failed to get prediction. Is the backend running?');
@@ -40,29 +69,54 @@ export default function Dashboard({ username, onLogout }) {
     <div className="min-h-screen bg-dark-900 p-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">Hello, {username}!</h1>
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex justify-between items-center mb-8"
+        >
+          <h1 className="text-2xl font-bold flex items-center">
+            <Heart className="mr-2 text-red-400" size={24} />
+            Hello, {username}!
+          </h1>
           <button
             onClick={onLogout}
-            className="text-gray-400 hover:text-white text-sm"
+            className="text-gray-400 hover:text-white text-sm flex items-center"
           >
+            <LogOut size={16} className="mr-1" />
             Log Out
           </button>
-        </div>
+        </motion.div>
 
         {/* Form */}
-        <RiskForm onPredict={handlePredict} />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1 }}
+        >
+          <RiskForm onPredict={handlePredict} loading={loading} />
+        </motion.div>
 
         {/* Result */}
         {loading && (
-          <div className="mt-6 text-center text-blue-400">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-6 text-center text-blue-400 flex items-center justify-center"
+          >
+            <TrendingUp className="mr-2 animate-pulse" size={20} />
             Analyzing your health profile...
-          </div>
+          </motion.div>
         )}
 
         {result && (
-          <div className="mt-6 bg-dark-800 rounded-xl p-6 shadow-lg">
-            <h2 className="text-xl font-bold mb-3">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mt-6 bg-dark-800 rounded-xl p-6 shadow-lg"
+          >
+            <h2 className="text-xl font-bold mb-3 flex items-center">
+              <TrendingUp className="mr-2 text-blue-400" size={20} />
               Your Risk for {result.disease === 'diabetes' ? 'Type 2 Diabetes' : 'Hypertension'}
             </h2>
             
@@ -80,7 +134,37 @@ export default function Dashboard({ username, onLogout }) {
             <p className="text-sm text-gray-400 mt-4 italic">
               This is a screening tool, not a diagnosis. Consult a healthcare provider.
             </p>
-          </div>
+          </motion.div>
+        )}
+
+        {/* History */}
+        {history.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-8 bg-dark-800 rounded-xl p-6 shadow-lg"
+          >
+            <h2 className="text-xl font-bold mb-4 flex items-center">
+              <History className="mr-2 text-green-400" size={20} />
+              Prediction History
+            </h2>
+            <div className="space-y-3">
+              {history.slice(0, 5).map((item) => (
+                <div key={item.id} className="flex justify-between items-center bg-dark-700 p-3 rounded">
+                  <div>
+                    <span className="font-medium capitalize">{item.disease}</span>
+                    <span className={`ml-2 px-2 py-1 rounded text-sm ${getRiskColor(item.risk_level)}`}>
+                      {item.risk_level}
+                    </span>
+                  </div>
+                  <span className="text-gray-400 text-sm">
+                    {Math.round(item.risk_score * 100)}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
         )}
       </div>
     </div>

@@ -10,10 +10,10 @@ import secrets
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)  # for session security
 # Allow frontend (localhost:5173) to send cookies
-CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
+# CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
 
 # SQLite Database
-app.config['SQLALCHEMY_DATABASEURI'] = 'sqlite:///app.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -120,6 +120,15 @@ def login():
         return jsonify({"success": True, "username": user.username})
     return jsonify({"success": False, "error": "Invalid credentials"}), 401
 
+@app.route('/me', methods=['GET'])
+def me():
+    if 'user_id' not in session:
+        return jsonify({"success": False, "error": "Not logged in"}), 401
+    user = User.query.get(session['user_id'])
+    if user:
+        return jsonify({"success": True, "username": user.username})
+    return jsonify({"success": False, "error": "User not found"}), 404
+
 # ======================
 # PREDICTION ROUTE
 # ======================
@@ -129,56 +138,87 @@ def predict():
         return jsonify({"error": "Not logged in"}), 401
 
     data = request.get_json()
-    if not 
+    if not data:
         return jsonify({"error": "No data provided"}), 400
 
     disease = data.get("disease", "diabetes")
     required = ["age", "bmi", "physActivity", "genHlth", "highBP", "highChol", "smoker"]
     for field in required:
-        if field not in 
+        if field not in data:
             return jsonify({"error": f"Missing field: {field}"}), 400
 
+    # Convert string inputs to appropriate types
+    print(f"Raw data: {data}")
+    try:
+        data["age"] = int(data["age"])
+        data["bmi"] = float(data["bmi"])
+        data["genHlth"] = int(data["genHlth"])
+        print(f"Converted data: {data}")
+    except (ValueError, TypeError) as e:
+        print(f"Conversion error: {e}")
+        return jsonify({"error": "Invalid data types for age, bmi, or genHlth"}), 400
+
     if disease == "diabetes":
-        risk_level, risk_score = predict_diabetes(data)
+        # risk_level, risk_score = predict_diabetes(data)
+        risk_level, risk_score = "Low", 0.1
     elif disease == "hypertension":
-        risk_level, risk_score = predict_hypertension(data)
+        # risk_level, risk_score = predict_hypertension(data)
+        risk_level, risk_score = "Low", 0.1
     else:
         return jsonify({"error": "Unsupported disease. Use 'diabetes' or 'hypertension'"}), 400
 
     # Save prediction
-    pred = Prediction(
-        user_id=session['user_id'],
-        disease=disease,
-        risk_level=risk_level,
-        risk_score=risk_score
-    )
-    db.session.add(pred)
-    db.session.commit()
+    # pred = Prediction(
+    #     user_id=session['user_id'],
+    #     disease=disease,
+    #     risk_level=risk_level,
+    #     risk_score=risk_score
+    # )
+    # db.session.add(pred)
+    # db.session.commit()
 
     # Generate medical advice
     advice = []
-    if disease == "diabetes":
-        if data["bmi"] > 25:
-            advice.append("Lose weight: Even 5-10% body weight loss significantly reduces diabetes risk.")
-        if not data["physActivity"]:
-            advice.append("Exercise at least 30 minutes daily (e.g., brisk walking).")
-        if data["highBP"]:
-            advice.append("High blood pressure increases diabetes complications — get it checked.")
-        advice.append("Get a blood test: Ask your doctor for fasting glucose or HbA1c screening.")
-    else:  # hypertension
-        if data["bmi"] > 25:
-            advice.append("Lose weight — it directly lowers blood pressure.")
-        if data["smoker"]:
-            advice.append("Quit smoking — it causes immediate spikes in blood pressure.")
-        advice.append("Reduce salt intake and eat more fruits, vegetables, and whole grains.")
-        advice.append("Check your blood pressure regularly at a pharmacy or clinic.")
+    # if disease == "diabetes":
+    #     if data["bmi"] > 25:
+    #         advice.append("Lose weight: Even 5-10% body weight loss significantly reduces diabetes risk.")
+    #     if not data["physActivity"]:
+    #         advice.append("Exercise at least 30 minutes daily (e.g., brisk walking).")
+    #     if data["highBP"]:
+    #         advice.append("High blood pressure increases diabetes complications — get it checked.")
+    #     advice.append("Get a blood test: Ask your doctor for fasting glucose or HbA1c screening.")
+    # else:  # hypertension
+    #     if data["bmi"] > 25:
+    #         advice.append("Lose weight — it directly lowers blood pressure.")
+    #     if data["smoker"]:
+    #         advice.append("Quit smoking — it causes immediate spikes in blood pressure.")
+    #     advice.append("Reduce salt intake and eat more fruits, vegetables, and whole grains.")
+    #     advice.append("Check your blood pressure regularly at a pharmacy or clinic.")
 
+    print(f"About to return: disease={disease}, risk={risk_level}, score={risk_score}")
     return jsonify({
         "disease": disease,
         "riskLevel": risk_level,
         "riskScore": round(risk_score, 2),
         "advice": advice
     })
+
+# ======================
+# HISTORY ROUTE
+# ======================
+@app.route('/history', methods=['GET'])
+def history():
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    predictions = Prediction.query.filter_by(user_id=session['user_id']).order_by(Prediction.id.desc()).all()
+    history_data = [{
+        "id": p.id,
+        "disease": p.disease,
+        "risk_level": p.risk_level,
+        "risk_score": p.risk_score,
+        "timestamp": p.id  # Using id as simple timestamp proxy
+    } for p in predictions]
+    return jsonify({"history": history_data})
 
 # ======================
 # LOGOUT
@@ -205,4 +245,4 @@ with app.app_context():
 # RUN
 # ======================
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='127.0.0.1', port=5000, debug=False)
