@@ -1,3 +1,5 @@
 flask==2.3.3
 flask-cors==4.0.0
 flask-sqlalchemy==3.0.5
+joblib==1.4.2
+numpy==1.26.4
