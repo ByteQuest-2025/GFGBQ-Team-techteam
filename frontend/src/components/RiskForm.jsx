@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { HelpCircle } from 'lucide-react';
 
 export default function RiskForm({ onPredict, loading }) {
   const [disease, setDisease] = useState('diabetes');
@@ -99,7 +100,7 @@ export default function RiskForm({ onPredict, loading }) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">BMI (e.g., 25.4)</label>
+          <label className="block text-sm font-medium mb-1">BMI (e.g., 25.4) <a href="https://www.cdc.gov/healthyweight/assessing/bmi/adult_bmi/english_bmi_calculator/bmi_calculator.html" target="_blank" rel="noopener noreferrer"><HelpCircle size={14} /></a></label>
           <input
             name="bmi"
             type="number"

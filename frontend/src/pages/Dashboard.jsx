@@ -186,7 +186,7 @@ export default function Dashboard({ username, onLogout }) {
                       transition={{ delay: 0.4 }}
                       className="text-gray-300"
                     >
-                      Processing your data with advanced AI algorithms...
+                      Processing your data ...
                     </motion.p>
                     
                     <motion.div 
