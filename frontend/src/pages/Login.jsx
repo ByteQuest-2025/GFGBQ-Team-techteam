@@ -9,7 +9,7 @@ export default function Login({ onLogin }) {
       <div className="bg-dark-800 rounded-2xl shadow-2xl w-full max-w-md p-8">
         <div className="text-center mb-8">
           <div className="text-4xl mb-2">🩺</div>
-          <h1 className="text-2xl font-bold">Silent Disease Detector</h1>
+          <h1 className="text-2xl font-bold">Health Guardian</h1>
           <p className="text-gray-400">Early screening for diabetes & hypertension</p>
         </div>
         

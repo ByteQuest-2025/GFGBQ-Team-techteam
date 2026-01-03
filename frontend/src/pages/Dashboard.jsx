@@ -16,15 +16,18 @@ export default function Dashboard({ username, onLogout }) {
           credentials: 'include'
         });
         const data = await res.json();
-        if (data.history) {
+        if (res.ok && data.history) {
           setHistory(data.history);
+        } else if (res.status === 401) {
+          // Session expired, logout
+          onLogout();
         }
       } catch (err) {
         console.error('Failed to fetch history', err);
       }
     };
     fetchHistory();
-  }, []);
+  }, [onLogout]);
 
   const handlePredict = async (data) => {
     setLoading(true);
@@ -39,6 +42,19 @@ export default function Dashboard({ username, onLogout }) {
       });
       
       const prediction = await res.json();
+      
+      if (!res.ok) {
+        // Handle error responses
+        if (res.status === 401) {
+          alert('Session expired. Please log in again.');
+          // Optionally, trigger logout
+          onLogout();
+          return;
+        }
+        alert(prediction.error || 'Failed to get prediction');
+        return;
+      }
+      
       setResult(prediction);
       // Add to history
       setHistory(prev => [{

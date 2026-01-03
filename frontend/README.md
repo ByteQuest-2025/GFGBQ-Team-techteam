@@ -1,6 +1,6 @@
-# React + Vite
+# Health Guardian Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend for Health Guardian, a health risk assessment application built with React and Vite.
 
 Currently, two official plugins are available:
 

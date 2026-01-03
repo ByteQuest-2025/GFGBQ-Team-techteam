@@ -10,10 +10,10 @@ import secrets
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)  # for session security
 # Allow frontend (localhost:5173) to send cookies
-CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
+CORS(app, supports_credentials=True, origins=["http://localhost:5173", "http://localhost:5174"])
 
 # SQLite Database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../instance/app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -44,7 +44,7 @@ def hash_password(password):
 def predict_diabetes(data):
     """Use real model if available, else fall back to mock logic."""
     try:
-        model = joblib.load("model.pkl")
+        model = joblib.load("diabetes_model.pkl")
         # Use plain Python list (no numpy needed)
         features = [[
             int(data["age"]),
@@ -72,15 +72,34 @@ def predict_diabetes(data):
         return risk, prob
 
 def predict_hypertension(data):
-    score = 0.1
-    if data["age"] > 7: score += 0.25
-    if data["bmi"] > 25: score += 0.2
-    if data["highChol"]: score += 0.15
-    if data["smoker"]: score += 0.1
-    if data["genHlth"] > 3: score += 0.2
-    prob = min(score, 0.95)
-    risk = "High" if prob >= 0.6 else "Medium" if prob >= 0.3 else "Low"
-    return risk, prob
+    """Use real model if available, else fall back to mock logic."""
+    try:
+        model = joblib.load("hypertension_model.pkl")
+        # Use plain Python list (no numpy needed)
+        features = [[
+            int(data["age"]),
+            float(data["bmi"]),
+            1 if data["physActivity"] else 0,
+            int(data["genHlth"]),
+            1 if data["highBP"] else 0,
+            1 if data["highChol"] else 0,
+            1 if data["smoker"] else 0
+        ]]
+        prob = model.predict_proba(features)[0][1]
+        risk = "High" if prob >= 0.6 else "Medium" if prob >= 0.3 else "Low"
+        return risk, float(prob)
+    except Exception as e:
+        print(f"ModelError: {e}")
+        # Mock fallback
+        score = 0.1
+        if data["age"] > 7: score += 0.25
+        if data["bmi"] > 25: score += 0.2
+        if data["highChol"]: score += 0.15
+        if data["smoker"]: score += 0.1
+        if data["genHlth"] > 3: score += 0.2
+        prob = min(score, 0.95)
+        risk = "High" if prob >= 0.6 else "Medium" if prob >= 0.3 else "Low"
+        return risk, prob
 
 # ======================
 # AUTH ROUTES
@@ -159,41 +178,39 @@ def predict():
         return jsonify({"error": "Invalid data types for age, bmi, or genHlth"}), 400
 
     if disease == "diabetes":
-        # risk_level, risk_score = predict_diabetes(data)
-        risk_level, risk_score = "Low", 0.1
+        risk_level, risk_score = predict_diabetes(data)
     elif disease == "hypertension":
-        # risk_level, risk_score = predict_hypertension(data)
-        risk_level, risk_score = "Low", 0.1
+        risk_level, risk_score = predict_hypertension(data)
     else:
         return jsonify({"error": "Unsupported disease. Use 'diabetes' or 'hypertension'"}), 400
 
     # Save prediction
-    # pred = Prediction(
-    #     user_id=session['user_id'],
-    #     disease=disease,
-    #     risk_level=risk_level,
-    #     risk_score=risk_score
-    # )
-    # db.session.add(pred)
-    # db.session.commit()
+    pred = Prediction(
+        user_id=session['user_id'],
+        disease=disease,
+        risk_level=risk_level,
+        risk_score=risk_score
+    )
+    db.session.add(pred)
+    db.session.commit()
 
     # Generate medical advice
     advice = []
-    # if disease == "diabetes":
-    #     if data["bmi"] > 25:
-    #         advice.append("Lose weight: Even 5-10% body weight loss significantly reduces diabetes risk.")
-    #     if not data["physActivity"]:
-    #         advice.append("Exercise at least 30 minutes daily (e.g., brisk walking).")
-    #     if data["highBP"]:
-    #         advice.append("High blood pressure increases diabetes complications — get it checked.")
-    #     advice.append("Get a blood test: Ask your doctor for fasting glucose or HbA1c screening.")
-    # else:  # hypertension
-    #     if data["bmi"] > 25:
-    #         advice.append("Lose weight — it directly lowers blood pressure.")
-    #     if data["smoker"]:
-    #         advice.append("Quit smoking — it causes immediate spikes in blood pressure.")
-    #     advice.append("Reduce salt intake and eat more fruits, vegetables, and whole grains.")
-    #     advice.append("Check your blood pressure regularly at a pharmacy or clinic.")
+    if disease == "diabetes":
+        if data["bmi"] > 25:
+            advice.append("Lose weight: Even 5-10% body weight loss significantly reduces diabetes risk.")
+        if not data["physActivity"]:
+            advice.append("Exercise at least 30 minutes daily (e.g., brisk walking).")
+        if data["highBP"]:
+            advice.append("High blood pressure increases diabetes complications — get it checked.")
+        advice.append("Get a blood test: Ask your doctor for fasting glucose or HbA1c screening.")
+    else:  # hypertension
+        if data["bmi"] > 25:
+            advice.append("Lose weight — it directly lowers blood pressure.")
+        if data["smoker"]:
+            advice.append("Quit smoking — it causes immediate spikes in blood pressure.")
+        advice.append("Reduce salt intake and eat more fruits, vegetables, and whole grains.")
+        advice.append("Check your blood pressure regularly at a pharmacy or clinic.")
 
     print(f"About to return: disease={disease}, risk={risk_level}, score={risk_score}")
     return jsonify({
@@ -245,4 +262,4 @@ with app.app_context():
 # RUN
 # ======================
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000, debug=False)
+    app.run(host='127.0.0.1', port=5000, debug=True)

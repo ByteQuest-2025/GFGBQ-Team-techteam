@@ -53,7 +53,7 @@ export default function RiskForm({ onPredict, loading }) {
 
   return (
     <div className="bg-dark-800 rounded-xl p-6 shadow-lg">
-      <h2 className="text-xl font-bold mb-6">Check for Silent Diseases</h2>
+      <h2 className="text-xl font-bold mb-6">Health Risk Assessment</h2>
       
       <div className="mb-6">
         <label className="block text-sm font-medium mb-2">Select Disease</label>
