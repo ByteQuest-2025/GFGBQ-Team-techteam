@@ -10,7 +10,7 @@ import secrets
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)  # for session security
 # Allow frontend (localhost:5173) to send cookies
-CORS(app, supports_credentials=True, origins=["http://localhost:5173", "http://localhost:5174"])
+CORS(app, supports_credentials=True, origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "http://localhost:8080", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:3000", "http://127.0.0.1:8080"])
 
 # SQLite Database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../instance/app.db'

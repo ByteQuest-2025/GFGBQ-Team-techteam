@@ -52,7 +52,7 @@ export default function RiskForm({ onPredict, loading }) {
   };
 
   return (
-    <div className="bg-dark-800 rounded-xl p-6 shadow-lg">
+    <div className="bg-black/20 backdrop-blur-md rounded-xl p-6 shadow-2xl border border-white/10">
       <h2 className="text-xl font-bold mb-6">Health Risk Assessment</h2>
       
       <div className="mb-6">

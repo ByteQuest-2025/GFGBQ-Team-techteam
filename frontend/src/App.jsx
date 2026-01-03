@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import Login from './pages/Login';
@@ -19,7 +19,7 @@ function App() {
         if (data.success) {
           setUser(data.username);
         }
-      } catch (e) {
+      } catch {
         // Ignore
       }
       setLoading(false);
