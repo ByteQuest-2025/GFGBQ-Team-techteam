@@ -23,12 +23,11 @@ N/A (Local development setup required)
 
 ## 2-Minute Demonstration Video Link
 
-[Demo Video](https://example.com/demo-video) (Placeholder - to be updated)
+[Demo Video](https://drive.google.com/drive/folders/1RPNO4eoG3Vbb-xQn4XVW8sBClEgC6Ezt?usp=sharing) 
 
 ## PPT Link
 
-[PPT Presentation](https://example.com/ppt-link) (Placeholder - to be updated)
-
+[PPT Presentation](https://drive.google.com/drive/folders/1RPNO4eoG3Vbb-xQn4XVW8sBClEgC6Ezt?usp=sharing) 
 ## Project Overview
 
 Health Guardian is a web-based application designed to assess individual risks for silent diseases like diabetes and hypertension. Its features:
