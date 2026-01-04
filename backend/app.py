@@ -45,6 +45,11 @@ def predict_diabetes(data):
     """Use real model if available, else fall back to mock logic."""
     try:
         model = joblib.load("diabetes_model.pkl")
+        # Simple validation: test on known input
+        test_input = [[30, 25, 1, 3, 0, 0, 0]]  # age 30, bmi 25, active, good health, no conditions
+        test_prob = model.predict_proba(test_input)[0][1]
+        if not (0 <= test_prob <= 1):
+            raise ValueError("Model validation failed")
         # Use plain Python list (no numpy needed)
         features = [[
             int(data["age"]),
@@ -75,6 +80,11 @@ def predict_hypertension(data):
     """Use real model if available, else fall back to mock logic."""
     try:
         model = joblib.load("hypertension_model.pkl")
+        # Simple validation: test on known input
+        test_input = [[30, 25, 1, 3, 0, 0, 0]]
+        test_prob = model.predict_proba(test_input)[0][1]
+        if not (0 <= test_prob <= 1):
+            raise ValueError("Model validation failed")
         # Use plain Python list (no numpy needed)
         features = [[
             int(data["age"]),
@@ -196,28 +206,39 @@ def predict():
 
     # Generate medical advice
     advice = []
+    suggestedGoals = {}
     if disease == "diabetes":
         if data["bmi"] > 25:
             advice.append("Lose weight: Even 5-10% body weight loss significantly reduces diabetes risk.")
+            suggestedGoals["exercise"] = 45  # increase exercise target
         if not data["physActivity"]:
             advice.append("Exercise at least 30 minutes daily (e.g., brisk walking).")
+            if risk_level == "High":
+                suggestedGoals["exercise"] = 45
         if data["highBP"]:
             advice.append("High blood pressure increases diabetes complications — get it checked.")
         advice.append("Get a blood test: Ask your doctor for fasting glucose or HbA1c screening.")
+        if risk_level == "High":
+            suggestedGoals["water"] = 10  # increase hydration
     else:  # hypertension
         if data["bmi"] > 25:
             advice.append("Lose weight — it directly lowers blood pressure.")
+            suggestedGoals["exercise"] = 45
         if data["smoker"]:
             advice.append("Quit smoking — it causes immediate spikes in blood pressure.")
         advice.append("Reduce salt intake and eat more fruits, vegetables, and whole grains.")
         advice.append("Check your blood pressure regularly at a pharmacy or clinic.")
+        if risk_level == "High":
+            suggestedGoals["water"] = 10
+            suggestedGoals["exercise"] = 45
 
     print(f"About to return: disease={disease}, risk={risk_level}, score={risk_score}")
     return jsonify({
         "disease": disease,
         "riskLevel": risk_level,
         "riskScore": round(risk_score, 2),
-        "advice": advice
+        "advice": advice,
+        "suggestedGoals": suggestedGoals
     })
 
 # ======================

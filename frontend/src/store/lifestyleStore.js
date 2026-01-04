@@ -18,7 +18,7 @@ export const useLifestyleStore = create(
       stressLog: [], // Array of { date, mood, stressLevel, activities }
 
       // Progress history
-      progressHistory: [], // Array of { date, metrics: { exercise, water, sleep, nutritionScore, stressScore } }
+      progressHistory: [], // Array of { date, metrics: { exercise, water, sleep, stressScore } }
 
       // Actions
       updateDailyGoal: (type, value) => set((state) => ({
@@ -31,16 +31,23 @@ export const useLifestyleStore = create(
         }
       })),
 
+      updateTarget: (type, value) => set((state) => ({
+        dailyGoals: {
+          ...state.dailyGoals,
+          [type]: {
+            ...state.dailyGoals[type],
+            target: value,
+            current: Math.min(state.dailyGoals[type].current, value)
+          }
+        }
+      })),
+
       resetDailyGoals: () => set((state) => ({
         dailyGoals: {
           exercise: { ...state.dailyGoals.exercise, current: 0 },
           water: { ...state.dailyGoals.water, current: 0 },
           sleep: { ...state.dailyGoals.sleep, current: 0 }
         }
-      })),
-
-      addNutritionEntry: (entry) => set((state) => ({
-        nutritionLog: [entry, ...state.nutritionLog]
       })),
 
       addStressEntry: (entry) => set((state) => ({
@@ -53,9 +60,6 @@ export const useLifestyleStore = create(
           exercise: state.dailyGoals.exercise.current,
           water: state.dailyGoals.water.current,
           sleep: state.dailyGoals.sleep.current,
-          nutritionScore: calculateNutritionScore(state.nutritionLog.filter(item =>
-            item.date.startsWith(today)
-          )),
           stressScore: calculateStressScore(state.stressLog.filter(item =>
             item.date.startsWith(today)
           )),
@@ -78,7 +82,6 @@ export const useLifestyleStore = create(
       name: 'lifestyle-storage',
       partialize: (state) => ({
         dailyGoals: state.dailyGoals,
-        nutritionLog: state.nutritionLog,
         stressLog: state.stressLog,
         progressHistory: state.progressHistory
       })
@@ -87,13 +90,6 @@ export const useLifestyleStore = create(
 );
 
 // Helper functions
-function calculateNutritionScore(todayNutrition) {
-  if (todayNutrition.length === 0) return 0;
-  // Simple scoring: more entries = better nutrition awareness
-  const score = Math.min(todayNutrition.length * 10, 100);
-  return score;
-}
-
 function calculateStressScore(todayStress) {
   if (todayStress.length === 0) return 50; // Neutral
   const avgStress = todayStress.reduce((sum, entry) => sum + entry.stressLevel, 0) / todayStress.length;

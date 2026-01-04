@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, TrendingUp, History, LogOut } from 'lucide-react';
+import { Heart, TrendingUp, History, LogOut, Target, AlertTriangle } from 'lucide-react';
 import RiskForm from '../components/RiskForm';
 import LifestyleGoals from '../components/LifestyleGoals';
 import StressManagement from '../components/StressManagement';
 import ProgressChart from '../components/ProgressChart';
+import Learn from '../components/Learn';
 import { useLifestyleStore } from '../store/lifestyleStore';
 
 export default function Dashboard({ username, onLogout }) {
@@ -12,7 +13,7 @@ export default function Dashboard({ username, onLogout }) {
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
   const [activeTab, setActiveTab] = useState('Risk Assessment');
-  const { updateProgress } = useLifestyleStore();
+  const { updateProgress, updateTarget } = useLifestyleStore();
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -116,7 +117,19 @@ export default function Dashboard({ username, onLogout }) {
           </button>
         </motion.div>
 
-        {/* Tabs */}
+        {/* Alert for High Risk */}
+        {result && result.riskLevel === 'High' && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-red-900/50 border border-red-700 rounded-xl p-4 text-center"
+          >
+            <AlertTriangle className="inline mr-2 text-red-400" size={20} />
+            <span className="font-medium text-red-200">
+              High Risk Detected: Please consult a healthcare provider immediately for {result.disease} screening.
+            </span>
+          </motion.div>
+        )}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -124,7 +137,7 @@ export default function Dashboard({ username, onLogout }) {
           className="mb-6"
         >
           <div className="flex space-x-1 bg-black/20 backdrop-blur-md rounded-lg p-1 border border-white/10">
-            {['Risk Assessment', 'Lifestyle Goals', 'Stress Management', 'Progress Chart'].map((tab) => (
+            {['Risk Assessment', 'Lifestyle Goals', 'Stress Management', 'Progress Chart', 'Learn'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -233,6 +246,33 @@ export default function Dashboard({ username, onLogout }) {
                     ))}
                   </ul>
                   
+                  {result.suggestedGoals && Object.keys(result.suggestedGoals).length > 0 && (
+                    <div className="mt-4">
+                      <h3 className="font-medium mb-2 flex items-center">
+                        <Target className="mr-2 text-yellow-400" size={16} />
+                        Suggested Goal Adjustments:
+                      </h3>
+                      <ul className="list-disc pl-5 space-y-1 text-gray-200">
+                        {Object.entries(result.suggestedGoals).map(([key, value]) => (
+                          <li key={key}>
+                            Increase {key === 'exercise' ? 'daily exercise' : key === 'water' ? 'water intake' : 'sleep'} to {value} {key === 'exercise' ? 'minutes' : key === 'water' ? 'glasses' : 'hours'}
+                          </li>
+                        ))}
+                      </ul>
+                      <button
+                        onClick={() => {
+                          Object.entries(result.suggestedGoals).forEach(([key, value]) => {
+                            updateTarget(key, value);
+                          });
+                          alert('Goals updated! Check the Lifestyle Goals tab.');
+                        }}
+                        className="mt-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded font-medium transition"
+                      >
+                        Apply Suggestions
+                      </button>
+                    </div>
+                  )}
+                  
                   <p className="text-sm text-gray-400 mt-4 italic">
                     This is a screening tool, not a diagnosis. Consult a healthcare provider.
                   </p>
@@ -268,6 +308,7 @@ export default function Dashboard({ username, onLogout }) {
           {activeTab === 'Lifestyle Goals' && <LifestyleGoals />}
           {activeTab === 'Stress Management' && <StressManagement />}
           {activeTab === 'Progress Chart' && <ProgressChart />}
+          {activeTab === 'Learn' && <Learn riskHistory={history} />}
         </motion.div>
       </div>
     </div>
